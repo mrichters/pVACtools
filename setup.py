@@ -71,7 +71,6 @@ setup(
         'pymp-pypi',
         'mock',
         'vaxrank>=1.1.0',
-        'tensorflow==2.2.2',
         'mhcnuggets==2.3.3',
         'mhcflurry==2.0.2',
     ],

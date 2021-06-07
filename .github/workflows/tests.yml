@@ -30,7 +30,6 @@ jobs:
         run: |
           pip install mhcnuggets==2.3.3
           pip install mhcflurry==2.0.2
-          pip install tensorflow==2.2.2
           pip install pandas==0.25.2
           pip install coveralls
           pip install -e .

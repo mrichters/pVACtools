@@ -312,6 +312,7 @@ class MHCflurry(MHCI):
             peptide = str(record.seq)
             epitopes = self.determine_neoepitopes(peptide, epitope_length)
             all_epitopes.extend(epitopes.values())
+        all_epitopes = list(set(all_epitopes))
 
         all_epitopes = list(set(all_epitopes))
         if len(all_epitopes) > 0:
