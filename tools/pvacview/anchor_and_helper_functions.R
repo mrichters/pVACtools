@@ -72,7 +72,7 @@ calculate_anchor <- function(hla_allele, peptide_length, anchor_contribution){
 calculate_mutation_info <- function(metrics_data_row){
   #browser()
   wt_peptide <- metrics_data_row$best_peptide_wt
-  if (is.na(wt_peptide) | (wt_peptide == "NA")){
+  if (is.na(wt_peptide)){
     return (0)
   }
   #hla_allele <- metrics_data_row$best_hla_allele
@@ -99,7 +99,7 @@ tier <- function(variant_info, anchor_contribution, dna_cutoff, mutation_pos_lis
   }
   anchor_residue_pass <- TRUE
   if (all(as.numeric(mutation_pos_list) %in% anchor_list)){
-    if (is.na(wt_binding) | (wt_binding == "NA")){
+    if (is.na(wt_binding)){
       anchor_residue_pass <- FALSE
     }
     else if (wt_binding < 1000) {
@@ -142,7 +142,7 @@ tier_numbers <- function(variant_info, anchor_contribution, dna_cutoff, mutation
   rna_vaf <- as.numeric(variant_info['RNA VAF'])
   rna_depth <- as.numeric(variant_info['RNA Depth'])
   allele_expr <- as.numeric(variant_info['Allele Expr'])
-  count = 11
+  count = 12
   if (anchor_mode == "default"){
     anchor_list <- c(1,2,nchar(variant_info['Best Peptide']), nchar(variant_info['Best Peptide'])-1)
   }
@@ -154,7 +154,7 @@ tier_numbers <- function(variant_info, anchor_contribution, dna_cutoff, mutation
   }
   anchor_residue_pass <- TRUE
   if (all(as.numeric(mutation_pos_list) %in% anchor_list)){
-    if (is.na(wt_binding) | (wt_binding == "NA")){
+    if (is.na(wt_binding)){
       anchor_residue_pass <- FALSE
     }
     else if (wt_binding < 1000) {
@@ -216,7 +216,7 @@ tier_numbers <- function(variant_info, anchor_contribution, dna_cutoff, mutation
   if ((gene_expr == 0) & (rna_depth > 50) & (rna_vaf > 0.10)){
     count = count + 4
   }
-  if (allele_expr > 0){
+  if (allele_expr > 0 & allele_expr < 1){
     count = count + 8
   }
   return (count)
