@@ -179,7 +179,7 @@ class PvacspliceRunArgumentParser(PredictionRunArgumentParser):
             +"of RegTools to extract only putative regulatory splicing variants from the original VCF file."
         )
         self.parser.add_argument(
-            "ensembl_version",
+            "--ensembl_version",
             help="Specify Ensembl version of the gtf file used in RegTools analysis"
         )
         self.parser.add_argument(

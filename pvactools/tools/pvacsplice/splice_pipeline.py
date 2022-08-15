@@ -37,6 +37,7 @@ class JunctionPipeline():
         self.fasta_to_kmers()
 
     def create_fastas(self):
+        print('Creating alt fasta')
         fasta_basename = os.path.basename(self.fasta_path)
         alt_fasta_path = os.path.join(self.tmp_dir, f'{fasta_basename.split(".")[0]}_alt.{".".join(fasta_basename.split(".")[1:])}')
         if not os.path.exists(alt_fasta_path):
@@ -85,7 +86,7 @@ class JunctionPipeline():
         combine_params = {
             'junctions_file' : self.create_file_path('filtered'),
             'variant_file'   : self.create_file_path('annotated'),
-            'sample_name'    : self.sample_name,
+            #'sample_name'    : self.sample_name,
             'output_file'    : self.create_file_path('combined'),
             'maximum_transcript_support_level' : self.maximum_transcript_support_level,
         }
@@ -95,39 +96,15 @@ class JunctionPipeline():
 
     def junction_to_fasta(self):
         print('Assembling tumor-specific splicing junctions')
-        filtered_df = pd.read_csv(self.create_file_path('combined'), sep='\t')
-        for i in filtered_df.index.unique().to_list():
-            junction = filtered_df.loc[[i], :]         
-            for row in junction.itertuples():
-                junction_params = {
-                    'fasta_path'     : self.fasta_path,
-                    'tscript_id'     : row.transcript_name,
-                    'chrom'          : row.junction_chrom,
-                    'junction_name'  : row.name,
-                    'junction_coors' : [row.junction_start, row.junction_stop],
-                    'fasta_index'    : row.index,
-                    'variant_info'   : row.variant_info,
-                    'anchor'         : row.anchor,
-                    'strand'         : row.strand,
-                    'gene_name'      : row.Gene_name,
-                    'output_file'    : self.create_file_path('fasta'),
-                    'output_dir'     : self.output_dir,
-                    'sample_name'    : self.sample_name,
-                    'vcf'            : self.annotated_vcf,
-                }
-                junctions = JunctionToFasta(**junction_params)
-                wt = junctions.create_wt_df()
-                if wt.empty:
-                    continue
-                alt = junctions.create_alt_df()
-                if alt.empty:
-                    continue
-                wt_aa = junctions.get_aa_sequence(wt, self.ref_fasta)
-                alt_aa = junctions.get_aa_sequence(alt, self.alt_fasta)
-                if wt_aa == '' or alt_aa == '':
-                    print('Amino acid sequence was not produced...Skipping')
-                    continue
-                junctions.create_sequence_fasta(wt_aa, alt_aa)
+        junction_params = {
+            'input_file'    : self.create_file_path('combined'),
+            'ref_fasta'     : self.ref_fasta,
+            'alt_fasta'     : self.alt_fasta,
+            'output_file'   : self.create_file_path('fasta'),
+            #'output_dir'    : self.output_dir,
+        }
+        junctions = JunctionToFasta(**junction_params)
+        junctions.execute()
         print('Completed')
     
 
@@ -137,7 +114,7 @@ class JunctionPipeline():
             'fasta'           : self.create_file_path('fasta'),
             'output_dir'      : self.tmp_dir,
             'epitope_lengths' : self.class_i_epitope_length + self.class_ii_epitope_length, 
-            'combined_df'     : self.create_file_path('combined'),
+            #'combined_df'     : self.create_file_path('combined'),
         }
         fasta = FastaToKmers(**kmer_params)
         fasta.execute()

@@ -23,7 +23,8 @@ def main():
         args[0].func.main(args[1])
     except AttributeError as e:
         parser.print_help()
-        print("Error: No command specified")
+        #print("Error: No command specified")
+        print(e)
         sys.exit(-1)
 
 if __name__ == '__main__':

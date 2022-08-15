@@ -9,7 +9,7 @@ class FastaToKmers():
         self.fasta_path      = kwargs['fasta']
         self.output_dir      = kwargs['output_dir']
         self.epitope_lengths = kwargs['epitope_lengths']
-        self.combined_df     = kwargs['combined_df']
+        #self.combined_df     = kwargs['combined_df']
         self.unique_kmers    = {}
 
 
@@ -62,7 +62,8 @@ class FastaToKmers():
     
     def create_index_file(self):
         # joined indexes for each unique kmer
-        fasta_info = {k:','.join(v) for k,v in self.unique_kmers.items()}
+        # note: sorted indexes (v) for epitope fasta key name consistency
+        fasta_info = {k:','.join(sorted(v)) for k,v in self.unique_kmers.items()}
         # prepare data to convert to df
         modified_dict = {'kmer': fasta_info.keys(), 'indexes': fasta_info.values()}
         # convert to df
@@ -78,24 +79,25 @@ class FastaToKmers():
         index_df['indexes'] = index_df.indexes.apply(lambda x: x.split(','))
         index_df = index_df.explode('indexes')
         # save to_csv()
-        index_df.to_csv(f'{self.output_dir}/kmer_index.tsv' ,sep='\t', index=False)
+        index_df.to_csv(os.path.join(self.output_dir,'kmer_index.tsv') ,sep='\t', index=False)
 
     def create_epitope_fastas(self):
         # for only 1 length at a time
         for x in self.epitope_lengths:
             len_subset = self.fasta_df[self.fasta_df['length'] == x].sort_values(by=['indexes'])
             # 1 file per kmer length
-            output_file = f'{self.output_dir}/peptides_length_{x}.fa'
+            output_file = os.path.join(self.output_dir,'peptides_length_{}.fa'.format(x))
             # loop over rows in subset df
             for row in len_subset.itertuples():
                 # fasta entry
                 write_str = f'>{row.indexes}\n{row.kmer}\n'
                 # don't duplicate entries
                 if os.path.exists(output_file):
-                    dup_content = re.search(write_str, open(output_file, "r").read())
-                    if dup_content == None:
-                        with open(output_file, "a") as f:
-                            f.write(write_str)
+                    with open(output_file, "r") as fr:
+                        dup_content = re.search(write_str, fr.read())
+                        if dup_content == None:
+                            with open(output_file, "a") as f:
+                                f.write(write_str)
                 else:
                     with open(output_file, "a") as f:
                         f.write(write_str)

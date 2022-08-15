@@ -2,11 +2,30 @@ import os
 import re
 import pandas as pd
 from Bio.Seq import Seq
+import pyfaidx
 from pvactools.tools.pvacsplice.load_ensembl_data import *
 
 class JunctionToFasta():
     def __init__(self, **kwargs):
-        self.fasta_path     = kwargs['fasta_path']
+        self.input_file     = kwargs['input_file']
+        self.ref_fasta      = kwargs['ref_fasta']
+        self.alt_fasta      = kwargs['alt_fasta']
+        self.output_file    = kwargs['output_file']
+        #self.output_dir     = kwargs['output_dir']
+        #self.sample_name    = kwargs['sample_name']
+        #self.vcf_file       = kwargs['vcf']
+        #self.fasta_path     = kwargs['fasta_path']
+
+        # interpret ref_fasta and alt_fasta as paths if needed and convert
+        if isinstance(self.ref_fasta, str) and isinstance(self.alt_fasta, str):
+            self.ref_fasta = pyfaidx.Fasta(self.ref_fasta)
+            self.alt_fasta = pyfaidx.FastaVariant(self.alt_fasta, kwargs['annotated_vcf'], sample=kwargs['sample_name'])
+
+        # used when non-execute method needed externally
+        if 'tscript_id' in kwargs:
+            self.set_vars(kwargs)
+
+    def set_vars(self, **kwargs):
         self.tscript_id     = kwargs['tscript_id']
         self.chrom          = kwargs['chrom']
         self.junction_name  = kwargs['junction_name']
@@ -16,10 +35,6 @@ class JunctionToFasta():
         self.anchor         = kwargs['anchor']
         self.strand         = kwargs['strand']
         self.gene_name      = kwargs['gene_name']
-        self.output_file    = kwargs['output_file']
-        self.output_dir     = kwargs['output_dir']
-        self.sample_name    = kwargs['sample_name']
-        self.vcf_file       = kwargs['vcf']
         if (self.anchor == 'A' and self.strand == 1) or (self.anchor == 'D' and self.strand == -1) or (self.anchor == 'NDA'):
             self.wt_coor  = int(self.junction_coors[1])
             self.alt_coor = int(self.junction_coors[0])
@@ -177,13 +192,44 @@ class JunctionToFasta():
     def create_sequence_fasta(self, wt_seq, alt_seq):
         write_str = f'>WT.{self.fasta_index}\n{wt_seq}\n>ALT.{self.fasta_index}\n{alt_seq}\n'
         if os.path.exists(self.output_file):
-            dup_content = re.search(write_str, open(self.output_file, "r").read())
-            if dup_content == None:
-                with open(self.output_file, "a") as f:
-                    f.write(write_str)
+            with open(self.output_file, "r") as fr:
+                dup_content = re.search(write_str, fr.read())
+                if dup_content == None:
+                    with open(self.output_file, "a") as f:
+                        f.write(write_str)
         else:
             with open(self.output_file, "a") as f:
                 f.write(write_str)
+
+    def execute(self):
+        filtered_df = pd.read_csv(self.input_file, sep='\t')
+        for i in filtered_df.index.unique().to_list():
+            junction = filtered_df.loc[[i], :]         
+            for row in junction.itertuples():
+                row_vars = {
+                    'tscript_id'        : row.transcript_name,
+                    'chrom'             : row.junction_chrom,
+                    'junction_name'     : row.name,
+                    'junction_coors'    : [row.junction_start, row.junction_stop],
+                    'fasta_index'       : row.index,
+                    'variant_info'      : row.variant_info,
+                    'anchor'            : row.anchor,
+                    'strand'            : row.strand,
+                    'gene_name'         : row.Gene_name,
+                }
+                self.set_vars(**row_vars)
+                wt = self.create_wt_df()
+                if wt.empty:
+                    continue
+                alt = self.create_alt_df()
+                if alt.empty:
+                    continue
+                wt_aa = self.get_aa_sequence(wt, self.ref_fasta)
+                alt_aa = self.get_aa_sequence(alt, self.alt_fasta)
+                if wt_aa == '' or alt_aa == '':
+                    print('Amino acid sequence was not produced...Skipping')
+                    continue
+                self.create_sequence_fasta(wt_aa, alt_aa)
 
 
 # GBM examples #
