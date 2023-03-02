@@ -1,6 +1,7 @@
 import sys
 import os
 import pandas as pd
+from pathlib import Path
 from pvactools.lib.splice_pipeline import *
 from pvactools.lib.prediction_class import *
 from pvactools.lib.pipeline import *
@@ -77,6 +78,18 @@ def combine_reports_per_class(base_output_dir, args, mhc_class):
 def main(args_input = sys.argv[1:]):
     parser = define_parser()
     args = parser.parse_args(args_input)
+
+    # fasta
+    if Path(args.ref_fasta).suffix not in ['.fa', '.fasta']:
+        sys.exit('The fasta input path does not point to a fasta file.')
+    elif Path(args.ref_fasta).suffix == '.gz':
+        sys.exit('pVACsplice does not currently support gzipped fasta files.')
+    # gtf
+    if Path(args.gtf_file).suffix not in ['.gtf', '.gz']:
+        sys.exit('The gtf input path does not point to a gtf file.')
+    # vcf
+    if Path(args.annotated_vcf).suffix not in ['.vcf', '.gz']:
+        sys.exit('The vcf input path does not point to a vcf file.')
 
     if args.iedb_retries > 100:
         sys.exit("The number of IEDB retries must be less than or equal to 100")
