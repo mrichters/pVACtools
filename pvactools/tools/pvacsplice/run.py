@@ -1,7 +1,9 @@
 import sys
 import os
+import multiprocessing
 import pandas as pd
 from pathlib import Path
+
 from pvactools.lib.splice_pipeline import *
 from pvactools.lib.prediction_class import *
 from pvactools.lib.pipeline import *
@@ -47,18 +49,18 @@ def combine_reports_per_class(base_output_dir, args, mhc_class):
         print(f'MHC_Class_{mhc_class} subfolder(s) are missing')
     combined_files = [os.path.join(m, f'{args.sample_name}.all_epitopes.tsv') for m in mhc_dirs]
 
-    combined_name = os.path.join(output_dir, f'{args.sample_name}.all_epitopes.tsv')
-    filtered_name = os.path.join(output_dir, f'{args.sample_name}.filtered.tsv')
+    combined_file = os.path.join(output_dir, f'{args.sample_name}.all_epitopes.tsv')
+    filtered_file = os.path.join(output_dir, f'{args.sample_name}.filtered.tsv')
 
-    combine_class_reports(combined_files, combined_name)
+    combine_class_reports(combined_files, combined_file)
 
     post_processing_params = vars(args)
-    post_processing_params['input_file'] = combined_name
-    post_processing_params['file_type'] = 'pVACsplice'
-    post_processing_params['filtered_report_file'] = filtered_name
+    post_processing_params['input_file'] = combined_file
+    post_processing_params['filtered_report_file'] = filtered_file
     post_processing_params['run_coverage_filter'] = True
-    post_processing_params['run_transcript_support_level_filter'] = False
     post_processing_params['minimum_fold_change'] = None
+    post_processing_params['file_type'] = 'pVACsplice'
+    post_processing_params['run_transcript_support_level_filter'] = False
     post_processing_params['run_manufacturability_metrics'] = True
     post_processing_params['run_reference_proteome_similarity'] = False
     if args.net_chop_method:
@@ -78,6 +80,9 @@ def combine_reports_per_class(base_output_dir, args, mhc_class):
 def main(args_input = sys.argv[1:]):
     parser = define_parser()
     args = parser.parse_args(args_input)
+
+    # remove resource_tracker warning
+    # only affects python 3.9,10,11
 
     # fasta
     if Path(args.ref_fasta).suffix not in ['.fa', '.fasta']:
@@ -185,7 +190,6 @@ def main(args_input = sys.argv[1:]):
     elif len(class_i_alleles) == 0:
         print("No MHC class I alleles chosen. Skipping MHC class I predictions.")
 
-
     if len(class_ii_prediction_algorithms) > 0 and len(class_ii_alleles) > 0:
         if args.iedb_install_directory:
             iedb_mhc_ii_executable = os.path.join(args.iedb_install_directory, 'mhc_ii', 'mhc_II_binding.py')
@@ -218,7 +222,6 @@ def main(args_input = sys.argv[1:]):
         print("No MHC class II prediction algorithms chosen. Skipping MHC class II predictions.")
     elif len(class_ii_alleles) == 0:
         print("No MHC class II alleles chosen. Skipping MHC class II predictions.")
-
 
     if len(class_i_prediction_algorithms) > 0 and len(class_i_alleles) > 0 and len(class_ii_prediction_algorithms) > 0 and len(class_ii_alleles) > 0:
         print("Creating combined reports")
