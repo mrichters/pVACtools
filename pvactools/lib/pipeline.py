@@ -767,15 +767,12 @@ class PvacbindPipeline(Pipeline):
 
         if self.keep_tmp_files is False:
             shutil.rmtree(self.tmp_dir, ignore_errors=True)
-
+g
 class PvacsplicePipeline(PvacbindPipeline):
 
     def execute(self):
-        #mv fasta file to MHC temp dir
+        # move fasta file to MHC tmp dir
         shutil.copy(self.input_file, os.path.join(self.tmp_dir, os.path.basename(self.input_file)))
-        # mv tsv file too
-
-        self.print_log()
 
         split_parsed_output_files = []
         chunks = self.split_fasta_file(self.epitope_lengths)
