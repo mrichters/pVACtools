@@ -95,6 +95,9 @@ def main(args_input = sys.argv[1:]):
     # vcf
     if Path(args.annotated_vcf).suffix not in ['.vcf', '.gz']:
         sys.exit('The vcf input path does not point to a vcf file.')
+    # vcf gz.tbi index file
+    if not os.path.exists(os.path.join(args.annotated_vcf, '.tbi')):
+        sys.exit('Gzipped VCF files must be indexed. (tabix -p vcf <vcf_file>)')
 
     if args.iedb_retries > 100:
         sys.exit("The number of IEDB retries must be less than or equal to 100")
